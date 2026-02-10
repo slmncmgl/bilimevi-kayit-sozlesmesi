@@ -1,0 +1,1 @@
+# bilimevi-kayit-sozlesmesi
