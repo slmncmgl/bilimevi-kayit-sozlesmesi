@@ -1,52 +1,48 @@
-import { NextResponse } from "next/server";
+// app/api/approve/route.ts
+import { NextRequest, NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
+function getClientIp(req: NextRequest) {
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
 
-export async function POST(req: Request) {
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim();
+
+  return "";
+}
+
+export async function POST(req: NextRequest) {
+  const N8N_APPROVE_WEBHOOK = process.env.N8N_APPROVE_WEBHOOK;
+  if (!N8N_APPROVE_WEBHOOK) {
+    return NextResponse.json({ error: "N8N_APPROVE_WEBHOOK env yok" }, { status: 500 });
+  }
+
   const body = await req.json().catch(() => ({}));
-  const token = body?.token;
-
+  const token = String(body?.token ?? "").trim();
   if (!token) {
     return NextResponse.json({ error: "token zorunlu" }, { status: 400 });
   }
 
-  const N8N_APPROVE_URL = process.env.N8N_APPROVE_URL;
-  const N8N_API_KEY = process.env.N8N_API_KEY; // opsiyonel
+  const approved_at = new Date().toISOString();
+  const approved_ip = getClientIp(req);
+  const user_agent = req.headers.get("user-agent") ?? "";
 
-  if (!N8N_APPROVE_URL) {
-    return NextResponse.json({ error: "N8N_APPROVE_URL env yok" }, { status: 500 });
-  }
-
-  // IP (opsiyonel)
-  const xff = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim();
-  const approved_ip = xff || null;
-
-  const res = await fetch(N8N_APPROVE_URL, {
+  const r = await fetch(N8N_APPROVE_WEBHOOK, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(N8N_API_KEY ? { "x-api-key": N8N_API_KEY } : {})
-    },
+    headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      token,
-      approved_ip
-    })
+      token,                // = tally_submission_id
+      approval_status: "APPROVED",
+      approved_at,
+      approved_ip,
+      user_agent,
+    }),
   });
 
-  const text = await res.text();
-
-  if (!res.ok) {
-    return NextResponse.json(
-      { error: "n8n approve hatası", detail: text },
-      { status: res.status }
-    );
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    return NextResponse.json({ error: "n8n webhook hata", details: text }, { status: 502 });
   }
 
-  // n8n ister JSON ister text dönebilir, JSON dene
-  try {
-    const data = JSON.parse(text);
-    return NextResponse.json(data, { status: 200 });
-  } catch {
-    return NextResponse.json({ ok: true }, { status: 200 });
-  }
+  return NextResponse.json({ ok: true });
 }
