@@ -13,11 +13,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "token zorunlu" }, { status: 400 });
   }
 
-  // 1) n8n’den contract_html_url çek
-  const n8nResp = await fetch(N8N_CONTRACT_URL, {
+ // 1) n8n’den contract_html_url çek (token ile)
+const n8nResp = await fetch(
+  `${N8N_CONTRACT_URL}?token=${encodeURIComponent(token)}`,
+  {
     method: "GET",
-    headers: { "accept": "application/json" },
-  }).catch(() => null);
+    headers: { accept: "application/json" },
+  }
+).catch(() => null);
 
   if (!n8nResp || !n8nResp.ok) {
     const txt = n8nResp ? await n8nResp.text().catch(() => "") : "";
