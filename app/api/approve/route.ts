@@ -7,42 +7,55 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "N8N_CONTRACT_URL env yok" }, { status: 500 });
   }
 
-  const token = req.nextUrl.searchParams.get("token")?.trim();
+  const { searchParams } = new URL(req.url);
+  const token = String(searchParams.get("token") ?? "").trim();
   if (!token) {
     return NextResponse.json({ error: "token zorunlu" }, { status: 400 });
   }
 
-  // 1) n8n'den contract_html_url al
-  const r1 = await fetch(`${N8N_CONTRACT_URL}?token=${encodeURIComponent(token)}`, {
+  // 1) n8n’den contract_html_url çek
+  const n8nResp = await fetch(N8N_CONTRACT_URL, {
     method: "GET",
     headers: { "accept": "application/json" },
-    cache: "no-store",
-  });
+  }).catch(() => null);
 
-  if (!r1.ok) {
-    const text = await r1.text().catch(() => "");
-    return NextResponse.json({ error: "n8n contract hatası", detail: text }, { status: 502 });
+  if (!n8nResp || !n8nResp.ok) {
+    const txt = n8nResp ? await n8nResp.text().catch(() => "") : "";
+    return NextResponse.json({ error: "n8n contract hatası", detail: txt }, { status: 502 });
   }
 
-  const data = await r1.json().catch(() => ({} as any));
-  const contract_html_url = String(data?.contract_html_url ?? "").trim();
-
-  if (!contract_html_url) {
-    return NextResponse.json({ error: "contract_html_url boş veya yok" }, { status: 404 });
+  let payload: any = {};
+  try {
+    payload = await n8nResp.json();
+  } catch {
+    return NextResponse.json({ error: "n8n JSON dönmedi", detail: "" }, { status: 502 });
   }
 
-  // 2) Drive URL'den HTML'i indir, contract_html olarak dön
-  const r2 = await fetch(contract_html_url, { method: "GET", cache: "no-store" });
-  if (!r2.ok) {
-    const text = await r2.text().catch(() => "");
-    return NextResponse.json({ error: "contract_html_url indirilemedi", detail: text }, { status: 502 });
+  // n8n’in response’u: { token, contract_html_url } olmalı
+  const contractUrl = String(payload?.contract_html_url ?? "").trim();
+  if (!contractUrl) {
+    return NextResponse.json({ error: "contract_html_url yok" }, { status: 404 });
   }
 
-  const contract_html = await r2.text();
+  // 2) Drive’dan HTML’i çek
+  const htmlResp = await fetch(contractUrl, {
+    method: "GET",
+    // Drive bazen content-type farklı dönebilir, kabul et
+    headers: { "accept": "text/html,*/*" },
+  }).catch(() => null);
 
+  if (!htmlResp || !htmlResp.ok) {
+    const txt = htmlResp ? await htmlResp.text().catch(() => "") : "";
+    return NextResponse.json({ error: "drive html çekilemedi", detail: txt }, { status: 502 });
+  }
+
+  const contract_html = await htmlResp.text().catch(() => "");
   if (!contract_html || !contract_html.toLowerCase().includes("<html")) {
-    return NextResponse.json({ error: "contract_html boş veya geçersiz" }, { status: 422 });
+    return NextResponse.json({ error: "contract_html boş veya geçersiz." }, { status: 502 });
   }
 
-  return NextResponse.json({ token, contract_html }, { status: 200 });
+  return NextResponse.json({
+    token,
+    contract_html,
+  });
 }
