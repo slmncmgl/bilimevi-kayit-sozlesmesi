@@ -136,10 +136,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 border: "1px solid #eee"
               }}
             >
-              <div
-                dangerouslySetInnerHTML={{ __html: contract?.contract_html ?? "" }}
-              />
-            </div>
+             <div
+  className="w-full overflow-x-hidden break-words whitespace-normal text-[15px] leading-6"
+  dangerouslySetInnerHTML={{ __html: contractHtml }}
+/>
 
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 16 }}>
               <button
