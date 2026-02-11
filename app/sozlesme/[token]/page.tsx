@@ -33,7 +33,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       try {
         const res = await fetch(`/api/contract?token=${encodeURIComponent(token)}`, {
           method: "GET",
-          cache: "no-store"
+          cache: "no-store",
         });
 
         if (!res.ok) {
@@ -90,7 +90,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       const res = await fetch(`/api/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token })
+        body: JSON.stringify({ token }),
       });
 
       if (!res.ok) {
@@ -105,6 +105,26 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       setApproving(false);
     }
   }
+
+  // ✅ normalize burada: state’ten gelen HTML'i güvenli şekilde ekrana sığdır
+  const normalizedHtml = useMemo(() => {
+    const html = contract?.contract_html ?? "";
+    if (!html) return "";
+
+    return html
+      .replace(
+        /<\/head>/i,
+        `<style>
+          html, body { max-width: 100%; overflow-x: hidden; }
+          img, table { max-width: 100% !important; height: auto !important; }
+          * { max-width: 100% !important; box-sizing: border-box; }
+          body { margin: 0; padding: 0; }
+          p, div, span { white-space: normal !important; overflow-wrap: anywhere; word-break: break-word; }
+        </style></head>`
+      )
+      .replace(/width:\s*\d+(px|pt);?/gi, "width:auto;")
+      .replace(/max-width:\s*\d+(px|pt);?/gi, "max-width:100%;");
+  }, [contract?.contract_html]);
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f6fa", padding: 24 }}>
@@ -124,23 +144,34 @@ export default function ContractPage({ params }: { params: { token: string } }) 
           </div>
         ) : (
           <>
+            {/* ✅ Scroll alanı */}
             <div
               ref={containerRef}
               style={{
                 height: "70vh",
                 overflowY: "auto",
+                overflowX: "hidden",
                 background: "white",
                 borderRadius: 12,
                 padding: 16,
                 boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
-                border: "1px solid #eee"
+                border: "1px solid #eee",
               }}
             >
-             <div
-  className="w-full overflow-x-hidden break-words whitespace-normal text-[15px] leading-6"
-  dangerouslySetInnerHTML={{ __html: contractHtml }}
-/>
+              <div
+                style={{
+                  width: "100%",
+                  overflowX: "hidden",
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
+                  fontSize: 15,
+                  lineHeight: "24px",
+                }}
+                dangerouslySetInnerHTML={{ __html: normalizedHtml }}
+              />
+            </div>
 
+            {/* ✅ Buton alanı (scroll container DIŞINDA) */}
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 16 }}>
               <button
                 onClick={approve}
@@ -152,7 +183,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                   cursor: !scrolledToBottom || approving || approved ? "not-allowed" : "pointer",
                   background: !scrolledToBottom || approving || approved ? "#c8c8c8" : "#1a73e8",
                   color: "white",
-                  fontWeight: 700
+                  fontWeight: 700,
                 }}
               >
                 {approved ? "Onaylandı" : approving ? "Onaylanıyor..." : "Okudum, Onaylıyorum"}
@@ -163,9 +194,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
               </div>
             </div>
 
-            {err && (
-              <div style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}>{err}</div>
-            )}
+            {err && <div style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}>{err}</div>}
           </>
         )}
       </div>
