@@ -89,6 +89,6 @@ export async function GET(req: NextRequest) {
       { status: 502 }
     );
   }
-
+ export const runtime = "nodejs";
   return NextResponse.json({ token, contract_html });
 }
