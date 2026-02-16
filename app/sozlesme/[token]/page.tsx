@@ -106,7 +106,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     }
   }
 
-  // ✅ normalize burada: state’ten gelen HTML'i güvenli şekilde ekrana sığdır
+  // ✅ normalize burada: state'ten gelen HTML'i güvenli şekilde ekrana sığdır
   const normalizedHtml = useMemo(() => {
     const html = contract?.contract_html ?? "";
     if (!html) return "";
@@ -115,11 +115,51 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       .replace(
         /<\/head>/i,
         `<style>
-          html, body { max-width: 100%; overflow-x: hidden; }
-          img, table { max-width: 100% !important; height: auto !important; }
-          * { max-width: 100% !important; box-sizing: border-box; }
-          body { margin: 0; padding: 0; }
-          p, div, span { white-space: normal !important; overflow-wrap: anywhere; word-break: break-word; }
+          html, body { 
+            max-width: 100%; 
+            overflow-x: hidden; 
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000;
+          }
+          
+          img, table { 
+            max-width: 100% !important; 
+            height: auto !important; 
+          }
+          
+          * { 
+            max-width: 100% !important; 
+            box-sizing: border-box; 
+          }
+          
+          body { 
+            margin: 0; 
+            padding: 0; 
+          }
+          
+          p, div, span { 
+            white-space: normal !important; 
+            overflow-wrap: anywhere; 
+            word-break: break-word; 
+          }
+          
+          /* ✅ BOLD TAG'LERİ ZORLA */
+          strong, 
+          b, 
+          .bold,
+          span[style*="font-weight:700"],
+          span[style*="font-weight: 700"],
+          span[style*="font-weight:bold"],
+          span[style*="font-weight: bold"] {
+            font-weight: 700 !important;
+          }
+          
+          h1, h2, h3 {
+            font-weight: 700 !important;
+            margin: 16pt 0 12pt 0;
+          }
         </style></head>`
       )
       .replace(/width:\s*\d+(px|pt);?/gi, "width:auto;")
