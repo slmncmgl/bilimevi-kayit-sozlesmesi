@@ -24,8 +24,8 @@ async function verifyRecaptcha(token: string): Promise<boolean> {
 
   const data = await res.json();
 
-  // v3: score 0.5 ve üzeri güvenilir
-  return data.success === true && data.score >= 0.5;
+  // ✅ v2: sadece success kontrolü (score YOK!)
+  return data.success === true;
 }
 
 export async function POST(req: NextRequest) {
@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "full_name zorunlu" }, { status: 400 });
   }
 
-  // ✅ reCAPTCHA doğrula
   if (!recaptchaToken) {
     return NextResponse.json({ error: "reCAPTCHA token eksik" }, { status: 400 });
   }
@@ -66,7 +65,7 @@ export async function POST(req: NextRequest) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       token,
-      full_name: fullName,        // ✅ YENİ
+      full_name: fullName,
       approval_status: "APPROVED",
       approved_at,
       approved_ip,
