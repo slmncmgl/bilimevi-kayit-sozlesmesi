@@ -12,6 +12,8 @@ type ContractResp = {
 declare global {
   interface Window {
     grecaptcha: any;
+    onRecaptchaSuccess: (token: string) => void;
+    onRecaptchaExpired: () => void;
   }
 }
 
@@ -26,13 +28,28 @@ export default function ContractPage({ params }: { params: { token: string } }) 
   const [approving, setApproving] = useState(false);
   const [approved, setApproved] = useState(false);
 
-  // ✅ YENİ: Ad Soyad
   const [fullName, setFullName] = useState("");
+  // ✅ v2: checkbox token state
+  const [recaptchaToken, setRecaptchaToken] = useState("");
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
- const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
-  
+  const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
+
+  // ✅ v2: window callback'leri
+  useEffect(() => {
+    window.onRecaptchaSuccess = (t: string) => {
+      setRecaptchaToken(t);
+    };
+    window.onRecaptchaExpired = () => {
+      setRecaptchaToken("");
+    };
+    return () => {
+      delete (window as any).onRecaptchaSuccess;
+      delete (window as any).onRecaptchaExpired;
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -87,64 +104,44 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => { el.removeEventListener("scroll", onScroll); };
   }, [loading, contract]);
 
-async function approve() {
-  if (!fullName.trim()) {
-    setErr("Lütfen adınızı ve soyadınızı girin.");
-    return;
-  }
+  async function approve() {
+    if (!fullName.trim()) {
+      setErr("Lütfen adınızı ve soyadınızı girin.");
+      return;
+    }
 
-  setApproving(true);
-  setErr(null);
+    // ✅ v2: checkbox tıklanmış mı?
+    if (!recaptchaToken) {
+      setErr("Lütfen robot olmadığınızı doğrulayın.");
+      return;
+    }
 
-  try {
-    // ✅ reCAPTCHA yüklenene kadar bekle (max 10 saniye)
-    let recaptchaToken = "";
-    
-    if (typeof window !== "undefined" && window.grecaptcha) {
-      recaptchaToken = await new Promise<string>((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error("reCAPTCHA zaman aşımı."));
-        }, 10000);
+    setApproving(true);
+    setErr(null);
 
-        window.grecaptcha.ready(async () => {
-          clearTimeout(timeout);
-          try {
-            const t = await window.grecaptcha.execute(
-              "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr",
-              { action: "approve_contract" }
-            );
-            resolve(t);
-          } catch (e) {
-            reject(e);
-          }
-        });
+    try {
+      const res = await fetch(`/api/approve`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          full_name: fullName.trim(),
+          recaptcha_token: recaptchaToken,
+        }),
       });
-    } else {
-      throw new Error("reCAPTCHA yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
+
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(t || `Approve failed (${res.status})`);
+      }
+
+      setApproved(true);
+    } catch (e: any) {
+      setErr(e?.message || "Bilinmeyen hata");
+    } finally {
+      setApproving(false);
     }
-
-    const res = await fetch(`/api/approve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token,
-        full_name: fullName.trim(),
-        recaptcha_token: recaptchaToken,
-      }),
-    });
-
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(t || `Approve failed (${res.status})`);
-    }
-
-    setApproved(true);
-  } catch (e: any) {
-    setErr(e?.message || "Bilinmeyen hata");
-  } finally {
-    setApproving(false);
   }
-}
 
   const normalizedHtml = useMemo(() => {
     const html = contract?.contract_html ?? "";
@@ -193,20 +190,21 @@ async function approve() {
       .replace(/max-width:\s*\d+(px|pt);?/gi, "max-width:100%;");
   }, [contract?.contract_html]);
 
-  const isButtonDisabled = !scrolledToBottom || approving || approved || !fullName.trim();
+  // ✅ v2: recaptchaToken da zorunlu
+  const isButtonDisabled = !scrolledToBottom || approving || approved || !fullName.trim() || !recaptchaToken;
 
   return (
     <>
-      {/* ✅ reCAPTCHA v3 Script */}
+      {/* ✅ v2: render parametresi YOK */}
       <Script
-        src={`https://www.google.com/recaptcha/api.js?render=${SITE_KEY}`}
+        src="https://www.google.com/recaptcha/api.js"
         strategy="afterInteractive"
       />
 
       <div style={{ minHeight: "100vh", background: "#f5f6fa", padding: 24 }}>
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
 
-          {/* ✅ Logo */}
+          {/* Logo */}
           <div style={{ textAlign: "center", marginBottom: 16 }}>
             <img
               src="https://www.bilimevi.com/assets/images/bilimevi_logo_761.svg"
@@ -215,7 +213,7 @@ async function approve() {
             />
           </div>
 
-          {/* ✅ Başlık (Token yazısı YOK) */}
+          {/* Başlık */}
           <h1 style={{ margin: "0 0 16px 0", textAlign: "center", fontSize: 20 }}>
             Bilimevi Sözleşme Onayı
           </h1>
@@ -256,10 +254,10 @@ async function approve() {
                 />
               </div>
 
-              {/* ✅ Ad Soyad + Buton alanı */}
+              {/* Ad Soyad + reCAPTCHA + Buton */}
               <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
 
-                {/* ✅ Ad Soyad input */}
+                {/* Ad Soyad input */}
                 {scrolledToBottom && !approved && (
                   <div style={{
                     background: "white",
@@ -286,6 +284,16 @@ async function approve() {
                         outline: "none",
                       }}
                     />
+
+                    {/* ✅ v2: reCAPTCHA Checkbox */}
+                    <div style={{ marginTop: 16 }}>
+                      <div
+                        className="g-recaptcha"
+                        data-sitekey={SITE_KEY}
+                        data-callback="onRecaptchaSuccess"
+                        data-expired-callback="onRecaptchaExpired"
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -316,9 +324,11 @@ async function approve() {
                     {approved
                       ? "Sözleşmeniz başarıyla onaylandı."
                       : scrolledToBottom
-                      ? fullName.trim()
-                        ? "Onay aktif."
-                        : "Lütfen adınızı soyadınızı girin."
+                      ? !fullName.trim()
+                        ? "Lütfen adınızı soyadınızı girin."
+                        : !recaptchaToken
+                        ? "Lütfen robot olmadığınızı doğrulayın."
+                        : "Onay aktif."
                       : "Aşağı kaydırıp sonuna ulaşınca onay aktif olur."}
                   </div>
                 </div>
