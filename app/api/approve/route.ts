@@ -81,10 +81,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
-```
-
----
-
-## 🔧 **Vercel'e Eklenecek Env Variables:**
-```
-RECAPTCHA_SECRET_KEY=6LcU0W4sAAAAAITBNuO8eNTpI684tUyHJKG6u7vU
