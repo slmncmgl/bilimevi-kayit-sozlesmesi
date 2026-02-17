@@ -249,18 +249,22 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 />
               </div>
 
-              {/* Ad Soyad + reCAPTCHA + Buton */}
-              <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* ✅ SABİT ALAN: Her zaman görünür */}
+              {!approved && (
+                <div style={{
+                  marginTop: 16,
+                  background: "white",
+                  borderRadius: 12,
+                  padding: 16,
+                  border: "1px solid #eee",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                }}>
 
-                {/* Ad Soyad input - scroll sonrası göster */}
-                {scrolledToBottom && !approved && (
-                  <div style={{
-                    background: "white",
-                    borderRadius: 12,
-                    padding: 16,
-                    border: "1px solid #eee",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-                  }}>
+                  {/* Ad Soyad */}
+                  <div>
                     <label style={{ display: "block", fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
                       ✍️ Onaylayan Kişinin Adı Soyadı
                     </label>
@@ -280,65 +284,70 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                       }}
                     />
                   </div>
-                )}
 
-                {/* ✅ reCAPTCHA: HER ZAMAN DOM'DA, sadece visibility değişiyor */}
-                <div style={{
-                  visibility: (scrolledToBottom && !approved) ? "visible" : "hidden",
-                  height: (scrolledToBottom && !approved) ? "auto" : 0,
-                  overflow: "hidden",
-                }}>
+                  {/* ✅ reCAPTCHA: SABİT, her zaman DOM'da ve görünür */}
                   <div
                     className="g-recaptcha"
                     data-sitekey={SITE_KEY}
                     data-callback="onRecaptchaSuccess"
                     data-expired-callback="onRecaptchaExpired"
                   />
-                </div>
 
-                {/* Buton satırı */}
-                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                  <button
-                    onClick={approve}
-                    disabled={isButtonDisabled}
-                    style={{
-                      padding: "12px 20px",
-                      borderRadius: 10,
-                      border: "none",
-                      cursor: isButtonDisabled ? "not-allowed" : "pointer",
-                      background: isButtonDisabled ? "#c8c8c8" : "#1a73e8",
-                      color: "white",
-                      fontWeight: 700,
-                      fontSize: 15,
-                    }}
-                  >
-                    {approved
-                      ? "✅ Onaylandı"
-                      : approving
-                      ? "Onaylanıyor..."
-                      : "Okudum, Anladım ve Onaylıyorum"}
-                  </button>
+                  {/* Buton + mesaj */}
+                  <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                    <button
+                      onClick={approve}
+                      disabled={isButtonDisabled}
+                      style={{
+                        padding: "12px 20px",
+                        borderRadius: 10,
+                        border: "none",
+                        cursor: isButtonDisabled ? "not-allowed" : "pointer",
+                        background: isButtonDisabled ? "#c8c8c8" : "#1a73e8",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: 15,
+                      }}
+                    >
+                      {approving ? "Onaylanıyor..." : "Okudum, Anladım ve Onaylıyorum"}
+                    </button>
 
-                  <div style={{ fontSize: 14, color: "#666" }}>
-                    {approved
-                      ? "Sözleşmeniz başarıyla onaylandı."
-                      : scrolledToBottom
-                      ? !fullName.trim()
+                    <div style={{ fontSize: 14, color: "#666" }}>
+                      {!scrolledToBottom
+                        ? "Sözleşmeyi sonuna kadar okuyun."
+                        : !fullName.trim()
                         ? "Lütfen adınızı soyadınızı girin."
                         : !recaptchaToken
                         ? "Lütfen robot olmadığınızı doğrulayın."
-                        : "Onay aktif."
-                      : "Aşağı kaydırıp sonuna ulaşınca onay aktif olur."}
+                        : "Onay aktif."}
+                    </div>
                   </div>
-                </div>
 
-                {/* Hata mesajı */}
-                {err && (
-                  <div style={{ color: "#b00020", whiteSpace: "pre-wrap", fontSize: 14 }}>
-                    {err}
-                  </div>
-                )}
-              </div>
+                  {/* Hata mesajı */}
+                  {err && (
+                    <div style={{ color: "#b00020", whiteSpace: "pre-wrap", fontSize: 14 }}>
+                      {err}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Onaylandı mesajı */}
+              {approved && (
+                <div style={{
+                  marginTop: 16,
+                  padding: 16,
+                  background: "#e8f5e9",
+                  borderRadius: 12,
+                  border: "1px solid #a5d6a7",
+                  textAlign: "center",
+                  fontWeight: 600,
+                  color: "#2e7d32",
+                  fontSize: 16,
+                }}>
+                  ✅ Sözleşmeniz başarıyla onaylandı.
+                </div>
+              )}
             </>
           )}
         </div>
