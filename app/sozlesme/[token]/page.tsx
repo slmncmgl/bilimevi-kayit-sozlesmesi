@@ -14,7 +14,6 @@ declare global {
     grecaptcha: any;
     onRecaptchaSuccess: (token: string) => void;
     onRecaptchaExpired: () => void;
-    onRecaptchaLoad: () => void;  // ✅ YENİ
   }
 }
 
@@ -36,29 +35,19 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
   const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
 
- useEffect(() => {
-  window.onRecaptchaSuccess = (t: string) => {
-    setRecaptchaToken(t);
-  };
-  window.onRecaptchaExpired = () => {
-    setRecaptchaToken("");
-  };
+  useEffect(() => {
+    window.onRecaptchaSuccess = (t: string) => {
+      setRecaptchaToken(t);
+    };
+    window.onRecaptchaExpired = () => {
+      setRecaptchaToken("");
+    };
 
-  // ✅ Manuel render callback
-  (window as any).onRecaptchaLoad = () => {
-    window.grecaptcha.render("recaptcha-container", {
-      sitekey: "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr",
-      callback: "onRecaptchaSuccess",
-      "expired-callback": "onRecaptchaExpired",
-    });
-  };
-
-  return () => {
-    delete (window as any).onRecaptchaSuccess;
-    delete (window as any).onRecaptchaExpired;
-    delete (window as any).onRecaptchaLoad;
-  };
-}, []);
+    return () => {
+      delete (window as any).onRecaptchaSuccess;
+      delete (window as any).onRecaptchaExpired;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -206,6 +195,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       <Script
         src="https://www.google.com/recaptcha/api.js"
         strategy="afterInteractive"
+        async
+        defer
       />
 
       <div style={{ minHeight: "100vh", background: "#f5f6fa", padding: 24 }}>
@@ -261,7 +252,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 />
               </div>
 
-              {/* ✅ SABİT ALAN: Her zaman görünür */}
+              {/* SABİT ALAN: Her zaman görünür */}
               {!approved && (
                 <div style={{
                   marginTop: 16,
@@ -297,9 +288,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     />
                   </div>
 
-                  {/* ✅ reCAPTCHA: SABİT, her zaman DOM'da ve görünür */}
+                  {/* reCAPTCHA: otomatik render, data-* attribute'ları ile */}
                   <div
                     id="recaptcha-container"
+                    className="g-recaptcha"
                     data-sitekey={SITE_KEY}
                     data-callback="onRecaptchaSuccess"
                     data-expired-callback="onRecaptchaExpired"
