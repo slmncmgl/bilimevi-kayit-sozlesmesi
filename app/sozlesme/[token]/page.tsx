@@ -31,8 +31,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const SITE_KEY = "6LcU0W4sAAAAAHRSqWldJx2jUVm4b8O1wo5ij4A9";
-
+ const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
+  
   useEffect(() => {
     let cancelled = false;
 
