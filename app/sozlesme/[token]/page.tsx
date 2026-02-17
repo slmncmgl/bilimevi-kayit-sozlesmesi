@@ -57,10 +57,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
     window.onRecaptchaLoad = renderCaptcha;
 
-    // Script disk cache'den zaten yüklüyse callback tetiklenmez — direkt render et
-    if (window.grecaptcha && window.grecaptcha.render) {
+    // grecaptcha.ready() — script ne zaman yüklenirse yüklensin bekler
+    window.grecaptcha?.ready(() => {
       renderCaptcha();
-    }
+    });
 
     return () => {
       delete (window as any).onRecaptchaSuccess;
