@@ -14,6 +14,7 @@ declare global {
     grecaptcha: any;
     onRecaptchaSuccess: (token: string) => void;
     onRecaptchaExpired: () => void;
+    onRecaptchaLoad: () => void;  // ✅ YENİ
   }
 }
 
@@ -35,18 +36,29 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
   const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
 
-  useEffect(() => {
-    window.onRecaptchaSuccess = (t: string) => {
-      setRecaptchaToken(t);
-    };
-    window.onRecaptchaExpired = () => {
-      setRecaptchaToken("");
-    };
-    return () => {
-      delete (window as any).onRecaptchaSuccess;
-      delete (window as any).onRecaptchaExpired;
-    };
-  }, []);
+ useEffect(() => {
+  window.onRecaptchaSuccess = (t: string) => {
+    setRecaptchaToken(t);
+  };
+  window.onRecaptchaExpired = () => {
+    setRecaptchaToken("");
+  };
+
+  // ✅ Manuel render callback
+  (window as any).onRecaptchaLoad = () => {
+    window.grecaptcha.render("recaptcha-container", {
+      sitekey: "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr",
+      callback: "onRecaptchaSuccess",
+      "expired-callback": "onRecaptchaExpired",
+    });
+  };
+
+  return () => {
+    delete (window as any).onRecaptchaSuccess;
+    delete (window as any).onRecaptchaExpired;
+    delete (window as any).onRecaptchaLoad;
+  };
+}, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -287,7 +299,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
                   {/* ✅ reCAPTCHA: SABİT, her zaman DOM'da ve görünür */}
                   <div
-                    className="g-recaptcha"
+                    id="recaptcha-container"
                     data-sitekey={SITE_KEY}
                     data-callback="onRecaptchaSuccess"
                     data-expired-callback="onRecaptchaExpired"
