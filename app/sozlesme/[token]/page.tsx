@@ -29,14 +29,12 @@ export default function ContractPage({ params }: { params: { token: string } }) 
   const [approved, setApproved] = useState(false);
 
   const [fullName, setFullName] = useState("");
-  // ✅ v2: checkbox token state
   const [recaptchaToken, setRecaptchaToken] = useState("");
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
 
-  // ✅ v2: window callback'leri
   useEffect(() => {
     window.onRecaptchaSuccess = (t: string) => {
       setRecaptchaToken(t);
@@ -110,7 +108,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       return;
     }
 
-    // ✅ v2: checkbox tıklanmış mı?
     if (!recaptchaToken) {
       setErr("Lütfen robot olmadığınızı doğrulayın.");
       return;
@@ -190,12 +187,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       .replace(/max-width:\s*\d+(px|pt);?/gi, "max-width:100%;");
   }, [contract?.contract_html]);
 
-  // ✅ v2: recaptchaToken da zorunlu
   const isButtonDisabled = !scrolledToBottom || approving || approved || !fullName.trim() || !recaptchaToken;
 
   return (
     <>
-      {/* ✅ v2: render parametresi YOK */}
       <Script
         src="https://www.google.com/recaptcha/api.js"
         strategy="afterInteractive"
@@ -257,7 +252,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
               {/* Ad Soyad + reCAPTCHA + Buton */}
               <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 12 }}>
 
-                {/* Ad Soyad input */}
+                {/* Ad Soyad input - scroll sonrası göster */}
                 {scrolledToBottom && !approved && (
                   <div style={{
                     background: "white",
@@ -284,18 +279,22 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                         outline: "none",
                       }}
                     />
-
-                    {/* ✅ v2: reCAPTCHA Checkbox */}
-                    <div style={{ marginTop: 16 }}>
-                      <div
-                        className="g-recaptcha"
-                        data-sitekey={SITE_KEY}
-                        data-callback="onRecaptchaSuccess"
-                        data-expired-callback="onRecaptchaExpired"
-                      />
-                    </div>
                   </div>
                 )}
+
+                {/* ✅ reCAPTCHA: HER ZAMAN DOM'DA, sadece visibility değişiyor */}
+                <div style={{
+                  visibility: (scrolledToBottom && !approved) ? "visible" : "hidden",
+                  height: (scrolledToBottom && !approved) ? "auto" : 0,
+                  overflow: "hidden",
+                }}>
+                  <div
+                    className="g-recaptcha"
+                    data-sitekey={SITE_KEY}
+                    data-callback="onRecaptchaSuccess"
+                    data-expired-callback="onRecaptchaExpired"
+                  />
+                </div>
 
                 {/* Buton satırı */}
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
