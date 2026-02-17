@@ -43,16 +43,24 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     window.onRecaptchaExpired = () => {
       setRecaptchaToken("");
     };
-    window.onRecaptchaLoad = () => {
+
+    const renderCaptcha = () => {
       const container = document.getElementById("recaptcha-container");
       if (!container) return;
       if (container.childElementCount > 0) return;
       window.grecaptcha.render("recaptcha-container", {
-        sitekey: "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr",
+        sitekey: SITE_KEY,
         callback: window.onRecaptchaSuccess,
         "expired-callback": window.onRecaptchaExpired,
       });
     };
+
+    window.onRecaptchaLoad = renderCaptcha;
+
+    // Script disk cache'den zaten yüklüyse callback tetiklenmez — direkt render et
+    if (window.grecaptcha && window.grecaptcha.render) {
+      renderCaptcha();
+    }
 
     return () => {
       delete (window as any).onRecaptchaSuccess;
@@ -300,7 +308,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     />
                   </div>
 
-                  {/* reCAPTCHA: manuel render, onRecaptchaLoad ile */}
+                  {/* reCAPTCHA: manuel render */}
                   <div id="recaptcha-container" />
 
                   {/* Buton + mesaj */}
