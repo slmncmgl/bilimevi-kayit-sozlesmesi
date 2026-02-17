@@ -14,7 +14,6 @@ declare global {
     grecaptcha: any;
     onRecaptchaSuccess: (token: string) => void;
     onRecaptchaExpired: () => void;
-    onRecaptchaLoad: () => void;
   }
 }
 
@@ -44,30 +43,24 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       setRecaptchaToken("");
     };
 
-    const renderCaptcha = () => {
+    return () => {
+      delete (window as any).onRecaptchaSuccess;
+      delete (window as any).onRecaptchaExpired;
+    };
+  }, []);
+
+  const handleScriptLoad = () => {
+    window.grecaptcha.ready(() => {
       const container = document.getElementById("recaptcha-container");
       if (!container) return;
       if (container.childElementCount > 0) return;
       window.grecaptcha.render("recaptcha-container", {
         sitekey: SITE_KEY,
-        callback: window.onRecaptchaSuccess,
-        "expired-callback": window.onRecaptchaExpired,
+        callback: (t: string) => setRecaptchaToken(t),
+        "expired-callback": () => setRecaptchaToken(""),
       });
-    };
-
-    window.onRecaptchaLoad = renderCaptcha;
-
-    // grecaptcha.ready() — script ne zaman yüklenirse yüklensin bekler
-    window.grecaptcha?.ready(() => {
-      renderCaptcha();
     });
-
-    return () => {
-      delete (window as any).onRecaptchaSuccess;
-      delete (window as any).onRecaptchaExpired;
-      delete (window as any).onRecaptchaLoad;
-    };
-  }, []);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -213,10 +206,9 @@ export default function ContractPage({ params }: { params: { token: string } }) 
   return (
     <>
       <Script
-        src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit"
+        src="https://www.google.com/recaptcha/api.js?render=explicit"
         strategy="afterInteractive"
-        async
-        defer
+        onLoad={handleScriptLoad}
       />
 
       <div style={{ minHeight: "100vh", background: "#f5f6fa", padding: 24 }}>
@@ -308,7 +300,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     />
                   </div>
 
-                  {/* reCAPTCHA: manuel render */}
+                  {/* reCAPTCHA: Script onLoad ile render */}
                   <div id="recaptcha-container" />
 
                   {/* Buton + mesaj */}
