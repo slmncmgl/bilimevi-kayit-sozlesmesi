@@ -14,6 +14,7 @@ declare global {
     grecaptcha: any;
     onRecaptchaSuccess: (token: string) => void;
     onRecaptchaExpired: () => void;
+    onRecaptchaLoad: () => void;
   }
 }
 
@@ -42,10 +43,21 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     window.onRecaptchaExpired = () => {
       setRecaptchaToken("");
     };
+    window.onRecaptchaLoad = () => {
+      const container = document.getElementById("recaptcha-container");
+      if (!container) return;
+      if (container.childElementCount > 0) return;
+      window.grecaptcha.render("recaptcha-container", {
+        sitekey: "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr",
+        callback: window.onRecaptchaSuccess,
+        "expired-callback": window.onRecaptchaExpired,
+      });
+    };
 
     return () => {
       delete (window as any).onRecaptchaSuccess;
       delete (window as any).onRecaptchaExpired;
+      delete (window as any).onRecaptchaLoad;
     };
   }, []);
 
@@ -193,7 +205,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
   return (
     <>
       <Script
-        src="https://www.google.com/recaptcha/api.js"
+        src="https://www.google.com/recaptcha/api.js?onload=onRecaptchaLoad&render=explicit"
         strategy="afterInteractive"
         async
         defer
@@ -288,14 +300,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     />
                   </div>
 
-                  {/* reCAPTCHA: otomatik render, data-* attribute'ları ile */}
-                  <div
-                    id="recaptcha-container"
-                    className="g-recaptcha"
-                    data-sitekey={SITE_KEY}
-                    data-callback="onRecaptchaSuccess"
-                    data-expired-callback="onRecaptchaExpired"
-                  />
+                  {/* reCAPTCHA: manuel render, onRecaptchaLoad ile */}
+                  <div id="recaptcha-container" />
 
                   {/* Buton + mesaj */}
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
