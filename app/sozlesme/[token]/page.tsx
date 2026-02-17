@@ -87,54 +87,64 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => { el.removeEventListener("scroll", onScroll); };
   }, [loading, contract]);
 
-  async function approve() {
-    // ✅ Ad Soyad zorunlu
-    if (!fullName.trim()) {
-      setErr("Lütfen adınızı ve soyadınızı girin.");
-      return;
-    }
-
-    setApproving(true);
-    setErr(null);
-
-    try {
-      // ✅ reCAPTCHA v3 token al
-      let recaptchaToken = "";
-      try {
-        recaptchaToken = await new Promise<string>((resolve, reject) => {
-          window.grecaptcha.ready(() => {
-            window.grecaptcha
-              .execute(SITE_KEY, { action: "approve_contract" })
-              .then(resolve)
-              .catch(reject);
-          });
-        });
-      } catch {
-        throw new Error("reCAPTCHA doğrulaması başarısız. Lütfen tekrar deneyin.");
-      }
-
-      const res = await fetch(`/api/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          full_name: fullName.trim(),
-          recaptcha_token: recaptchaToken,
-        }),
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || `Approve failed (${res.status})`);
-      }
-
-      setApproved(true);
-    } catch (e: any) {
-      setErr(e?.message || "Bilinmeyen hata");
-    } finally {
-      setApproving(false);
-    }
+async function approve() {
+  if (!fullName.trim()) {
+    setErr("Lütfen adınızı ve soyadınızı girin.");
+    return;
   }
+
+  setApproving(true);
+  setErr(null);
+
+  try {
+    // ✅ reCAPTCHA yüklenene kadar bekle (max 10 saniye)
+    let recaptchaToken = "";
+    
+    if (typeof window !== "undefined" && window.grecaptcha) {
+      recaptchaToken = await new Promise<string>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error("reCAPTCHA zaman aşımı."));
+        }, 10000);
+
+        window.grecaptcha.ready(async () => {
+          clearTimeout(timeout);
+          try {
+            const t = await window.grecaptcha.execute(
+              "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr",
+              { action: "approve_contract" }
+            );
+            resolve(t);
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+    } else {
+      throw new Error("reCAPTCHA yüklenemedi. Sayfayı yenileyip tekrar deneyin.");
+    }
+
+    const res = await fetch(`/api/approve`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token,
+        full_name: fullName.trim(),
+        recaptcha_token: recaptchaToken,
+      }),
+    });
+
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(t || `Approve failed (${res.status})`);
+    }
+
+    setApproved(true);
+  } catch (e: any) {
+    setErr(e?.message || "Bilinmeyen hata");
+  } finally {
+    setApproving(false);
+  }
+}
 
   const normalizedHtml = useMemo(() => {
     const html = contract?.contract_html ?? "";
