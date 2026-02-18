@@ -184,11 +184,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
           />
         </div>
 
-        {/* Başlık */}
-        <h1 style={{ margin: "0 0 16px 0", textAlign: "center", fontSize: 20 }}>
-          Bilimevi Sözleşme Onayı
-        </h1>
-
         {loading ? (
           <div style={{ padding: 16, background: "white", borderRadius: 12 }}>Yükleniyor...</div>
         ) : err && !contract ? (
