@@ -7,6 +7,8 @@ type ContractResp = {
   contract_html: string;
   approval_status?: string;
   contract_version?: string;
+  kvkk_html?: string;
+
 };
 
 type ApproveResp = {
@@ -271,7 +273,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
             </div>
 
             {/* KVKK alanı — sözleşme onaylandıktan sonra görünür */}
-            {contractApproved && kvkkUrl && (
+            {contractApproved && contract?.kvkk_html && (
               <div
                 ref={kvkkRef}
                 style={{
@@ -285,16 +287,16 @@ export default function ContractPage({ params }: { params: { token: string } }) 
               >
                 <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   📄 KVKK Aydınlatma Metni
-                </div>
-                <iframe
-                  src={kvkkUrl}
-                  style={{
-                    width: "100%",
-                    height: 400,
-                    border: "none",
-                    borderRadius: 8,
-                  }}
-                />
+                <div
+  dangerouslySetInnerHTML={{ __html: contract.kvkk_html }}
+  style={{
+    width: "100%",
+    wordBreak: "break-word",
+    overflowWrap: "anywhere",
+    fontSize: 15,
+    lineHeight: "24px",
+  }}
+/>
               </div>
             )}
 
