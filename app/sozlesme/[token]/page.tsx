@@ -9,6 +9,11 @@ type ContractResp = {
   contract_version?: string;
 };
 
+type ApproveResp = {
+  ok: boolean;
+  kvkk_url?: string | null;
+};
+
 export default function ContractPage({ params }: { params: { token: string } }) {
   const token = params.token;
 
@@ -18,12 +23,15 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const [approving, setApproving] = useState(false);
-  const [approved, setApproved] = useState(false);
+  const [contractApproved, setContractApproved] = useState(false);
+  const [kvkkUrl, setKvkkUrl] = useState<string | null>(null);
+  const [kvkkApproved, setKvkkApproved] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [recaptchaToken, setRecaptchaToken] = useState("");
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const kvkkRef = useRef<HTMLDivElement | null>(null);
   const recaptchaRef = useRef<ReCAPTCHA | null>(null);
 
   const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
@@ -82,6 +90,15 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => { el.removeEventListener("scroll", onScroll); };
   }, [loading, contract]);
 
+  // KVKK yüklenince scroll et
+  useEffect(() => {
+    if (kvkkUrl && kvkkRef.current) {
+      setTimeout(() => {
+        kvkkRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  }, [kvkkUrl]);
+
   async function approve() {
     if (!fullName.trim()) {
       setErr("Lütfen adınızı ve soyadınızı girin.");
@@ -97,22 +114,36 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     setErr(null);
 
     try {
-      const res = await fetch(`/api/approve`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          full_name: fullName.trim(),
-          recaptcha_token: recaptchaToken,
-        }),
-      });
+      if (!contractApproved) {
+        // Aşama 1: Sözleşmeyi onayla
+        const res = await fetch(`/api/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            full_name: fullName.trim(),
+            recaptcha_token: recaptchaToken,
+          }),
+        });
 
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(t || `Approve failed (${res.status})`);
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || `Approve failed (${res.status})`);
+        }
+
+        const data = (await res.json()) as ApproveResp;
+        setContractApproved(true);
+        setKvkkUrl(data.kvkk_url ?? null);
+
+        // Butonu tekrar aktif etmek için recaptcha sıfırla
+        recaptchaRef.current?.reset();
+        setRecaptchaToken("");
+
+      } else {
+        // Aşama 2: KVKK'yı onayla
+        // TODO: ayrı kvkk approve endpoint eklenecek
+        setKvkkApproved(true);
       }
-
-      setApproved(true);
     } catch (e: any) {
       setErr(e?.message || "Bilinmeyen hata");
       recaptchaRef.current?.reset();
@@ -169,7 +200,18 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       .replace(/max-width:\s*\d+(px|pt);?/gi, "max-width:100%;");
   }, [contract?.contract_html]);
 
-  const isButtonDisabled = !scrolledToBottom || approving || approved || !fullName.trim() || !recaptchaToken;
+  const isButtonDisabled =
+    approving ||
+    kvkkApproved ||
+    !fullName.trim() ||
+    !recaptchaToken ||
+    (!contractApproved && !scrolledToBottom);
+
+  const buttonLabel = approving
+    ? "Onaylanıyor..."
+    : contractApproved
+    ? "KVKK'yı Okudum ve Onaylıyorum"
+    : "Okudum, Anladım ve Onaylıyorum";
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f6fa", padding: 24 }}>
@@ -193,7 +235,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
           </div>
         ) : (
           <>
-            {/* Scroll alanı */}
+            {/* Sözleşme scroll alanı */}
             <div
               ref={containerRef}
               style={{
@@ -220,8 +262,36 @@ export default function ContractPage({ params }: { params: { token: string } }) 
               />
             </div>
 
+            {/* KVKK alanı — sözleşme onaylandıktan sonra görünür */}
+            {contractApproved && kvkkUrl && (
+              <div
+                ref={kvkkRef}
+                style={{
+                  marginTop: 16,
+                  background: "white",
+                  borderRadius: 12,
+                  padding: 16,
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.08)",
+                  border: "1px solid #eee",
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
+                  📄 KVKK Aydınlatma Metni
+                </div>
+                <iframe
+                  src={kvkkUrl}
+                  style={{
+                    width: "100%",
+                    height: 400,
+                    border: "none",
+                    borderRadius: 8,
+                  }}
+                />
+              </div>
+            )}
+
             {/* SABİT ALAN */}
-            {!approved && (
+            {!kvkkApproved && (
               <div style={{
                 marginTop: 16,
                 background: "white",
@@ -243,6 +313,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    disabled={contractApproved}
                     placeholder="Örn: Ayşe Yılmaz"
                     style={{
                       width: "100%",
@@ -252,6 +323,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                       fontSize: 15,
                       boxSizing: "border-box",
                       outline: "none",
+                      background: contractApproved ? "#f5f5f5" : "white",
+                      color: contractApproved ? "#999" : "#000",
                     }}
                   />
                 </div>
@@ -280,21 +353,22 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                       fontSize: 15,
                     }}
                   >
-                    {approving ? "Onaylanıyor..." : "Okudum, Anladım ve Onaylıyorum"}
+                    {buttonLabel}
                   </button>
 
                   <div style={{ fontSize: 14, color: "#666" }}>
-                    {!scrolledToBottom
+                    {!contractApproved && !scrolledToBottom
                       ? "Sözleşmeyi sonuna kadar okuyun."
                       : !fullName.trim()
                       ? "Lütfen adınızı soyadınızı girin."
                       : !recaptchaToken
                       ? "Lütfen robot olmadığınızı doğrulayın."
+                      : contractApproved
+                      ? "KVKK onayı aktif."
                       : "Onay aktif."}
                   </div>
                 </div>
 
-                {/* Hata mesajı */}
                 {err && (
                   <div style={{ color: "#b00020", whiteSpace: "pre-wrap", fontSize: 14 }}>
                     {err}
@@ -303,8 +377,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
               </div>
             )}
 
-            {/* Onaylandı mesajı */}
-            {approved && (
+            {/* Tüm onaylar tamamlandı */}
+            {kvkkApproved && (
               <div style={{
                 marginTop: 16,
                 padding: 16,
@@ -316,7 +390,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 color: "#2e7d32",
                 fontSize: 16,
               }}>
-                ✅ Sözleşmeniz başarıyla onaylandı.
+                ✅ Sözleşmeniz ve KVKK onayınız başarıyla tamamlandı.
               </div>
             )}
           </>
