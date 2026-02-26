@@ -78,5 +78,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "n8n webhook hata", details: text }, { status: 502 });
   }
 
-  return NextResponse.json({ ok: true });
+const data = await r.json().catch(() => ({}));
+return NextResponse.json({ ok: true, kvkk_url: data.kvkk_url ?? null });
 }
