@@ -133,7 +133,15 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
         const data = (await res.json()) as ApproveResp;
         setContractApproved(true);
-        setKvkkUrl(data.kvkk_url ?? null);
+
+        const rawUrl = data.kvkk_url ?? null;
+        if (rawUrl) {
+        const match = rawUrl.match(/\/file\/d\/([^/]+)/);
+        const fileId = match?.[1];
+        setKvkkUrl(fileId ? `https://drive.google.com/file/d/${fileId}/preview` : rawUrl);
+        } else {
+        setKvkkUrl(null);
+        }
 
         // Butonu tekrar aktif etmek için recaptcha sıfırla
         recaptchaRef.current?.reset();
