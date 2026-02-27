@@ -150,10 +150,24 @@ export default function ContractPage({ params }: { params: { token: string } }) 
         setRecaptchaToken("");
 
       } else {
-        // Aşama 2: KVKK'yı onayla
-        // TODO: ayrı kvkk approve endpoint eklenecek
-        setKvkkApproved(true);
-      }
+  // Aşama 2: KVKK'yı onayla
+  const res = await fetch(`/api/kvkk-approve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      token,
+      full_name: fullName.trim(),
+      recaptcha_token: recaptchaToken,
+    }),
+  });
+
+  if (!res.ok) {
+    const t = await res.text().catch(() => "");
+    throw new Error(t || `KVKK approve failed (${res.status})`);
+  }
+
+  setKvkkApproved(true);
+}
     } catch (e: any) {
       setErr(e?.message || "Bilinmeyen hata");
       recaptchaRef.current?.reset();
