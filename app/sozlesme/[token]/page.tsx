@@ -286,7 +286,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 }}
               >
                 <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
-  📄 KVKK Aydınlatma Metni
+  📄 KVKK Aydınlatma Metni ve Açık Rıza Beyanı
 </div>
 <div
   dangerouslySetInnerHTML={{ __html: contract.kvkk_html }}
