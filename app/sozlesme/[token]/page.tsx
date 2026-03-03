@@ -415,8 +415,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 color: "#2e7d32",
                 fontSize: 16,
               }}>
-                ✅ Sözleşmeniz ve KVKK onayınız başarıyla tamamlandı. 
-                >> BU SAYFAYI KAPATABİLİRSİNİZ.
+                ✅ Sözleşmeniz ve KVKK onayınız başarıyla tamamlandı. BU SAYFAYI KAPATABİLİRSİNİZ.
               </div>
             )}
           </>
