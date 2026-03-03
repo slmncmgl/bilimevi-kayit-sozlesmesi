@@ -232,7 +232,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     (!contractApproved && !scrolledToBottom);
 
   const buttonLabel = approving
-    ? "Onaylanıyor..."
+    ? "Onaylanıyor... SAYFAYI LÜTFEN KAPATMAYIN."
     : contractApproved
     ? "KVKK'yı Okudum ve Onaylıyorum"
     : "Okudum, Anladım ve Onaylıyorum";
@@ -415,7 +415,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 color: "#2e7d32",
                 fontSize: 16,
               }}>
-                ✅ Sözleşmeniz ve KVKK onayınız başarıyla tamamlandı.
+                ✅ Sözleşmeniz ve KVKK onayınız başarıyla tamamlandı. 
+                >> BU SAYFAYI KAPATABİLİRSİNİZ.
               </div>
             )}
           </>
