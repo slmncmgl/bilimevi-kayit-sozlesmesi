@@ -8,7 +8,6 @@ type ContractResp = {
   approval_status?: string;
   contract_version?: string;
   kvkk_html?: string;
-
 };
 
 type ApproveResp = {
@@ -31,6 +30,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
   const [fullName, setFullName] = useState("");
   const [recaptchaToken, setRecaptchaToken] = useState("");
+
+  const [popupState, setPopupState] = useState<null | "contract-loading" | "contract-done" | "kvkk-loading" | "kvkk-done">(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const kvkkRef = useRef<HTMLDivElement | null>(null);
@@ -92,7 +93,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => { el.removeEventListener("scroll", onScroll); };
   }, [loading, contract]);
 
-  // KVKK yüklenince scroll et
   useEffect(() => {
     if (kvkkUrl && kvkkRef.current) {
       setTimeout(() => {
@@ -114,6 +114,7 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
     setApproving(true);
     setErr(null);
+    setPopupState(contractApproved ? "kvkk-loading" : "contract-loading");
 
     try {
       if (!contractApproved) {
@@ -135,41 +136,45 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
         const data = (await res.json()) as ApproveResp;
         setContractApproved(true);
+        setPopupState("contract-done");
+        await new Promise((res) => setTimeout(res, 2000));
+        setPopupState(null);
 
         const rawUrl = data.kvkk_url ?? null;
         if (rawUrl) {
-        const match = rawUrl.match(/\/file\/d\/([^/]+)/);
-        const fileId = match?.[1];
-        setKvkkUrl(fileId ? `https://drive.google.com/file/d/${fileId}/preview` : rawUrl);
+          const match = rawUrl.match(/\/file\/d\/([^/]+)/);
+          const fileId = match?.[1];
+          setKvkkUrl(fileId ? `https://drive.google.com/file/d/${fileId}/preview` : rawUrl);
         } else {
-        setKvkkUrl(null);
+          setKvkkUrl(null);
         }
 
-        // Butonu tekrar aktif etmek için recaptcha sıfırla
         recaptchaRef.current?.reset();
         setRecaptchaToken("");
 
       } else {
-  // Aşama 2: KVKK'yı onayla
-  const res = await fetch(`/api/kvkk-approve`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      token,
-      full_name: fullName.trim(),
-      recaptcha_token: recaptchaToken,
-    }),
-  });
+        // Aşama 2: KVKK'yı onayla
+        const res = await fetch(`/api/kvkk-approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token,
+            full_name: fullName.trim(),
+            recaptcha_token: recaptchaToken,
+          }),
+        });
 
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(t || `KVKK approve failed (${res.status})`);
-  }
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(t || `KVKK approve failed (${res.status})`);
+        }
 
-  setKvkkApproved(true);
-}
+        setKvkkApproved(true);
+        setPopupState("kvkk-done");
+      }
     } catch (e: any) {
       setErr(e?.message || "Bilinmeyen hata");
+      setPopupState(null);
       recaptchaRef.current?.reset();
       setRecaptchaToken("");
     } finally {
@@ -300,18 +305,18 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 }}
               >
                 <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
-  📄 KVKK Aydınlatma Metni ve Açık Rıza Beyanı
-</div>
-<div
-  dangerouslySetInnerHTML={{ __html: contract.kvkk_html }}
-  style={{
-    width: "100%",
-    wordBreak: "break-word",
-    overflowWrap: "anywhere",
-    fontSize: 15,
-    lineHeight: "24px",
-  }}
-/>
+                  📄 KVKK Aydınlatma Metni ve Açık Rıza Beyanı
+                </div>
+                <div
+                  dangerouslySetInnerHTML={{ __html: contract.kvkk_html }}
+                  style={{
+                    width: "100%",
+                    wordBreak: "break-word",
+                    overflowWrap: "anywhere",
+                    fontSize: 15,
+                    lineHeight: "24px",
+                  }}
+                />
               </div>
             )}
 
@@ -401,6 +406,74 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 )}
               </div>
             )}
+
+            {/* POPUP OVERLAY */}
+            {popupState && (
+              <div style={{
+                position: "fixed", inset: 0,
+                background: "rgba(0,0,0,0.55)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                zIndex: 9999,
+              }}>
+                <div style={{
+                  background: "white",
+                  borderRadius: 16,
+                  padding: "36px 40px",
+                  maxWidth: 420,
+                  width: "90%",
+                  textAlign: "center",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.18)",
+                }}>
+                  {(popupState === "contract-loading" || popupState === "kvkk-loading") && (
+                    <>
+                      <div style={{
+                        width: 48, height: 48,
+                        border: "5px solid #e0e0e0",
+                        borderTop: "5px solid #1a73e8",
+                        borderRadius: "50%",
+                        animation: "spin 0.8s linear infinite",
+                        margin: "0 auto 20px",
+                      }} />
+                      <div style={{ fontWeight: 700, fontSize: 16, color: "#333" }}>
+                        {popupState === "contract-loading"
+                          ? "Sözleşme Onaylanıyor..."
+                          : "KVKK Onaylanıyor..."}
+                      </div>
+                      <div style={{ marginTop: 8, fontSize: 14, color: "#e53935", fontWeight: 600 }}>
+                        Lütfen Sayfayı Kapatmayın
+                      </div>
+                    </>
+                  )}
+
+                  {popupState === "contract-done" && (
+                    <>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
+                      <div style={{ fontWeight: 700, fontSize: 17, color: "#2e7d32", marginBottom: 8 }}>
+                        Sözleşme Onaylandı!
+                      </div>
+                      <div style={{ fontSize: 15, color: "#555" }}>
+                        Şimdi son olarak KVKK formunu onaylayınız.
+                      </div>
+                    </>
+                  )}
+
+                  {popupState === "kvkk-done" && (
+                    <>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
+                      <div style={{ fontWeight: 700, fontSize: 17, color: "#2e7d32", marginBottom: 8 }}>
+                        Kayıt işleminiz tamamlandı,
+                      </div>
+                      <div style={{ fontSize: 15, color: "#555" }}>
+                        bu sayfayı kapatabilirsiniz.
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Spinner keyframe */}
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
 
             {/* Tüm onaylar tamamlandı */}
             {kvkkApproved && (
