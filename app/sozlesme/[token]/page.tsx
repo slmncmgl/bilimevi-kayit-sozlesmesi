@@ -461,10 +461,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     <>
                       <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
                       <div style={{ fontWeight: 700, fontSize: 17, color: "#2e7d32", marginBottom: 8 }}>
-                        Kayıt işleminiz tamamlandı,
+                        Kayıt İşleminiz Tamamlandı,
                       </div>
                       <div style={{ fontSize: 15, color: "#555" }}>
-                        bu sayfayı kapatabilirsiniz.
+                        Bu Sayfayı Kapatabilirsiniz.
                       </div>
                     </>
                   )}
