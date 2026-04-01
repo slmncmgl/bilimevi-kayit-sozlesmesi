@@ -359,7 +359,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     disabled={contractApproved}
-                    placeholder="Örn: Ayşe Yılmaz"
                     style={{
                       width: "100%",
                       padding: "10px 12px",
