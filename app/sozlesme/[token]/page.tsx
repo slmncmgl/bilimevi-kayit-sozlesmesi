@@ -8,6 +8,7 @@ type ContractResp = {
   approval_status?: string;
   contract_version?: string;
   kvkk_html?: string;
+  signed_by?: string; // YENİ
 };
 
 type ApproveResp = {
@@ -339,6 +340,20 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                   <label style={{ display: "block", fontWeight: 600, marginBottom: 8, fontSize: 14 }}>
                     ✍️ Onaylayan Kişinin Adı Soyadı
                   </label>
+
+                  {contract?.signed_by && (
+  <div style={{
+    background: "#fff8e1",
+    border: "1px solid #ffa000",
+    borderRadius: 6,
+    padding: "8px 12px",
+    fontSize: 13,
+    color: "#e65100",
+    marginBottom: 8
+  }}>
+    ⚠️ Bu sözleşme <strong>{contract.signed_by}</strong> adına düzenlenmiştir. Lütfen bu kişinin adını yazınız.
+  </div>
+)}
                   <input
                     type="text"
                     value={fullName}
