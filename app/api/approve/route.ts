@@ -47,15 +47,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "full_name zorunlu" }, { status: 400 });
   }
 
-  if (!recaptchaToken) {
-    return NextResponse.json({ error: "reCAPTCHA token eksik" }, { status: 400 });
-  }
-
-  const isHuman = await verifyRecaptcha(recaptchaToken);
-  if (!isHuman) {
-    return NextResponse.json({ error: "reCAPTCHA doğrulaması başarısız" }, { status: 403 });
-  }
-
   const approved_at = new Date().toISOString();
   const approved_ip = getClientIp(req);
   const user_agent = req.headers.get("user-agent") ?? "";
