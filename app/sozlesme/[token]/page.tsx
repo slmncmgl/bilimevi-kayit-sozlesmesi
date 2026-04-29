@@ -36,7 +36,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
   const SITE_KEY = "6Lel1m4sAAAAAKmTkqiiCqkpr8fELq9JzRGDX9gr";
 
-  // Sözleşmeyi yükle
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -63,7 +62,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => { cancelled = true; };
   }, [token]);
 
-  // Sözleşme scroll takibi
   useEffect(() => {
     const el = contractRef.current;
     if (!el) return;
@@ -77,7 +75,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => el.removeEventListener("scroll", onScroll);
   }, [loading, contract]);
 
-  // KVKK scroll takibi
   useEffect(() => {
     const el = kvkkContainerRef.current;
     if (!el || !kvkkVisible) return;
@@ -91,7 +88,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     return () => el.removeEventListener("scroll", onScroll);
   }, [kvkkVisible]);
 
-  // KVKK görününce focus ol
   useEffect(() => {
     if (kvkkVisible && kvkkRef.current) {
       setTimeout(() => {
@@ -100,12 +96,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     }
   }, [kvkkVisible]);
 
-  // KVKK'yı göster butonu
   function showKvkk() {
     setKvkkVisible(true);
   }
 
-  // Son onay
   async function approve() {
     if (!fullName.trim()) { setErr("Lütfen adınızı ve soyadınızı girin."); return; }
     if (!recaptchaToken) { setErr("Lütfen robot olmadığınızı doğrulayın."); return; }
@@ -115,7 +109,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     setPopupState("loading");
 
     try {
-      // Sözleşme onayla
       const r1 = await fetch(`/api/approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +116,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
       });
       if (!r1.ok) throw new Error(await r1.text().catch(() => `Approve failed (${r1.status})`));
 
-      // KVKK onayla
       const r2 = await fetch(`/api/kvkk-approve`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -164,6 +156,8 @@ export default function ContractPage({ params }: { params: { token: string } }) 
     <div style={{ minHeight: "100vh", background: "#f5f6fa", padding: 24 }}>
       <div style={{ maxWidth: 900, margin: "0 auto" }}>
 
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 16 }}>
           <img src="https://www.bilimevi.com/assets/images/bilimevi_logo_761.svg" alt="Bilimevi Logo" style={{ height: 60, width: "auto" }} />
@@ -171,9 +165,9 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
         {loading ? (
           <div style={{ padding: 32, background: "white", borderRadius: 12, textAlign: "center" }}>
-  <div style={{ width: 48, height: 48, border: "5px solid #e0e0e0", borderTop: "5px solid #1a73e8", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-  <div style={{ fontSize: 15, color: "#666" }}>Yükleniyor...</div>
-</div>
+            <div style={{ width: 48, height: 48, border: "5px solid #e0e0e0", borderTop: "5px solid #1a73e8", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+            <div style={{ fontSize: 15, color: "#666" }}>Yükleniyor...</div>
+          </div>
         ) : err && !contract ? (
           <div style={{ padding: 16, background: "white", borderRadius: 12, border: "1px solid #f2c2c2" }}>
             <div style={{ color: "#b00020", fontWeight: 600, marginBottom: 8 }}>Hata</div>
@@ -223,7 +217,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
 
                 {/* Ad soyad + reCAPTCHA + Onay */}
                 <div style={{ marginTop: 16, background: "white", borderRadius: 12, padding: 16, border: "1px solid #eee", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", gap: 12 }}>
-
                   <div>
                     <label style={{ display: "block", fontWeight: 600, marginBottom: 8, fontSize: 14 }}>✍️ Onaylayan Kişinin Adı Soyadı</label>
                     {contract?.signed_by && (
@@ -257,7 +250,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                   </button>
 
                   {!kvkkScrolled && <div style={{ fontSize: 13, color: "#666" }}>Devam etmek için KVKK'yı sonuna kadar okuyun.</div>}
-
                   {err && <div style={{ color: "#b00020", whiteSpace: "pre-wrap", fontSize: 14 }}>{err}</div>}
                 </div>
               </>
@@ -291,8 +283,6 @@ export default function ContractPage({ params }: { params: { token: string } }) 
                 </div>
               </div>
             )}
-
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </>
         )}
       </div>
