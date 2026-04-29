@@ -170,7 +170,10 @@ export default function ContractPage({ params }: { params: { token: string } }) 
         </div>
 
         {loading ? (
-          <div style={{ padding: 16, background: "white", borderRadius: 12 }}>Yükleniyor...</div>
+          <div style={{ padding: 32, background: "white", borderRadius: 12, textAlign: "center" }}>
+  <div style={{ width: 48, height: 48, border: "5px solid #e0e0e0", borderTop: "5px solid #1a73e8", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+  <div style={{ fontSize: 15, color: "#666" }}>Yükleniyor...</div>
+</div>
         ) : err && !contract ? (
           <div style={{ padding: 16, background: "white", borderRadius: 12, border: "1px solid #f2c2c2" }}>
             <div style={{ color: "#b00020", fontWeight: 600, marginBottom: 8 }}>Hata</div>
